@@ -1,0 +1,150 @@
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f4f6f8;
+    color: #1f2937;
+}
+
+main {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 30px 20px;
+}
+
+h1,
+h2 {
+    margin-top: 0;
+}
+
+button {
+    cursor: pointer;
+}
+
+
+/* LOGIN VIEW */
+
+#login-view {
+    max-width: 420px;
+    margin: 100px auto;
+    padding: 30px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+#login-form div {
+    margin-bottom: 16px;
+}
+
+#login-form label {
+    display: block;
+    margin-bottom: 6px;
+}
+
+#login-form input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+}
+
+#login-form button {
+    padding: 10px 18px;
+}
+
+#login-error {
+    color: #b91c1c;
+}
+
+
+/* PROFILE */
+
+#profile-view > header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+}
+
+#profile-view > section {
+    background: white;
+    padding: 24px;
+    margin-bottom: 24px;
+    border-radius: 12px;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.06);
+}
+
+
+/* STATISTICS */
+
+#statistics-section {
+    margin-top: 30px;
+}
+
+#statistics-section > p {
+    color: #64748b;
+    margin-bottom: 25px;
+}
+
+.graph-card {
+    padding: 20px;
+    margin-top: 20px;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    overflow-x: auto;
+}
+
+.graph-description {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin-bottom: 20px;
+}
+
+.graph-description strong {
+    font-size: 18px;
+}
+
+.graph-description span {
+    color: #64748b;
+}
+
+#graph-one,
+#graph-two {
+    width: 100%;
+    min-width: 600px;
+}
+
+#graph-one svg,
+#graph-two svg {
+    display: block;
+    width: 100%;
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+
+/* RESPONSIVE */
+
+@media (max-width: 700px) {
+    main {
+        padding: 15px;
+    }
+
+    #profile-view > header {
+        align-items: flex-start;
+        gap: 15px;
+    }
+
+    #profile-view > section {
+        padding: 18px;
+    }
+
+    .graph-card {
+        padding: 12px;
+    }
+}
