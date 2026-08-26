@@ -401,3 +401,134 @@ const total = passCount + failCount;
 
     container.appendChild(svg);
 }
+
+function renderTopXpSourcesChart(transactions) {
+    const container = document.getElementById("graph-three");
+
+    container.innerHTML = "";
+
+    if (!transactions || transactions.length === 0) {
+        container.textContent = "No XP data available.";
+        return;
+    }
+
+    // Group XP by path
+    const xpByPath = {};
+
+    transactions.forEach((transaction) => {
+        if (!transaction.path) {
+            return;
+        }
+
+        if (!xpByPath[transaction.path]) {
+            xpByPath[transaction.path] = 0;
+        }
+
+        xpByPath[transaction.path] += transaction.amount;
+    });
+
+    // Convert object into array, sort highest XP first,
+    // and keep only the top 5
+    const topSources = Object.entries(xpByPath)
+        .map(([path, xp]) => ({
+            path,
+            xp
+        }))
+        .sort((a, b) => b.xp - a.xp)
+        .slice(0, 5);
+
+    const width = 800;
+    const height = 420;
+
+    const svgNamespace =
+        "http://www.w3.org/2000/svg";
+
+    const svg = document.createElementNS(
+        svgNamespace,
+        "svg"
+    );
+
+    svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+    svg.setAttribute("width", "100%");
+    svg.setAttribute("height", height);
+
+    // Title
+    const title = document.createElementNS(
+        svgNamespace,
+        "text"
+    );
+
+    title.setAttribute("x", width / 2);
+    title.setAttribute("y", 35);
+    title.setAttribute("text-anchor", "middle");
+    title.setAttribute("font-size", "20");
+
+    title.textContent = "Top 5 XP Sources";
+
+    svg.appendChild(title);
+
+    const maxXp = Math.max(
+        ...topSources.map((source) => source.xp)
+    );
+
+    const startX = 240;
+    const maxBarWidth = 470;
+    const barHeight = 40;
+    const gap = 65;
+
+    topSources.forEach((source, index) => {
+        const y = 75 + index * gap;
+
+        const shortName =
+            source.path.split("/").filter(Boolean).pop();
+
+        // Project/exercise label
+        const label = document.createElementNS(
+            svgNamespace,
+            "text"
+        );
+
+        label.setAttribute("x", 20);
+        label.setAttribute("y", y + 26);
+        label.setAttribute("font-size", "14");
+
+        label.textContent = shortName;
+
+        svg.appendChild(label);
+
+        // XP bar
+        const bar = document.createElementNS(
+            svgNamespace,
+            "rect"
+        );
+
+        const barWidth =
+            (source.xp / maxXp) * maxBarWidth;
+
+        bar.setAttribute("x", startX);
+        bar.setAttribute("y", y);
+        bar.setAttribute("width", barWidth);
+        bar.setAttribute("height", barHeight);
+        bar.setAttribute("fill", "#2563eb");
+
+        svg.appendChild(bar);
+
+        // XP value
+        const value = document.createElementNS(
+            svgNamespace,
+            "text"
+        );
+
+        value.setAttribute("x", startX + 10);
+        value.setAttribute("y", y + 26);
+        value.setAttribute("fill", "white");
+        value.setAttribute("font-size", "14");
+
+        value.textContent =
+            `${source.xp.toLocaleString()} XP`;
+
+        svg.appendChild(value);
+    });
+
+    container.appendChild(svg);
+}

@@ -51,7 +51,7 @@ function decodeJwtPayload(token) {
 
     const bytes = Uint8Array.from(
         decoded,
-        char => char.charCodeAt(0)
+        (char) => char.charCodeAt(0)
     );
 
     return JSON.parse(
@@ -60,7 +60,7 @@ function decodeJwtPayload(token) {
 }
 
 
-// Get the authenticated user's ID from the JWT
+// Get authenticated user's ID from JWT
 function getAuthenticatedUserId() {
     const token = getToken();
 
@@ -83,51 +83,93 @@ function getAuthenticatedUserId() {
 }
 
 
-// Send username/email + password to Reboot signin API
+// Send username/email + password to Reboot
 async function signin(identifier, password) {
-    const credentials = btoa(`${identifier}:${password}`);
+    const credentials =
+        btoa(`${identifier}:${password}`);
 
-    const response = await fetch(SIGNIN_ENDPOINT, {
-        method: "POST",
-        headers: {
-            Authorization: `Basic ${credentials}`
+    const response = await fetch(
+        SIGNIN_ENDPOINT,
+        {
+            method: "POST",
+            headers: {
+                Authorization:
+                    `Basic ${credentials}`
+            }
         }
-    });
+    );
 
     if (!response.ok) {
-        throw new Error("Invalid username/email or password.");
+        throw new Error(
+            "Invalid username/email or password."
+        );
     }
 
-    const token = await response.json();
-
-    return token;
+    return await response.json();
 }
 
 
 // Handle login form
-document.addEventListener("DOMContentLoaded", () => {
-    const loginForm = document.getElementById("login-form");
-    const loginError = document.getElementById("login-error");
+document.addEventListener(
+    "DOMContentLoaded",
+    () => {
+        const loginForm =
+            document.getElementById("login-form");
 
-    loginForm.addEventListener("submit", async (event) => {
-        event.preventDefault();
+        const loginError =
+            document.getElementById("login-error");
 
-        loginError.textContent = "";
+        const loginButton =
+            loginForm.querySelector(
+                'button[type="submit"]'
+            );
 
-        const identifier =
-            document.getElementById("identifier").value.trim();
+        loginForm.addEventListener(
+            "submit",
+            async (event) => {
+                event.preventDefault();
 
-        const password =
-            document.getElementById("password").value;
+                loginError.textContent = "";
 
-        try {
-            const token = await signin(identifier, password);
+                const identifier =
+                    document
+                        .getElementById("identifier")
+                        .value
+                        .trim();
 
-            saveToken(token);
+                const password =
+                    document
+                        .getElementById("password")
+                        .value;
 
-            updateView();
-        } catch (error) {
-            loginError.textContent = error.message;
-        }
-    });
-});
+                // Show loading feedback
+                loginButton.disabled = true;
+                loginButton.textContent =
+                    "Signing in...";
+
+                try {
+                    const token =
+                        await signin(
+                            identifier,
+                            password
+                        );
+
+                    saveToken(token);
+
+                    loginForm.reset();
+
+                    updateView();
+
+                } catch (error) {
+                    loginError.textContent =
+                        error.message;
+
+                } finally {
+                    loginButton.disabled = false;
+                    loginButton.textContent =
+                        "Login";
+                }
+            }
+        );
+    }
+);

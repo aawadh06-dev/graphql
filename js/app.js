@@ -13,6 +13,8 @@ await displayGrades();
 
 const xpTransactions = await getXpTransactions();
 renderXpOverTimeChart(xpTransactions);
+renderTopXpSourcesChart(xpTransactions);
+
 const progressGrades = await getProgressGrades();
 renderPassFailChart(progressGrades);
 
