@@ -224,182 +224,96 @@ function renderPassFailChart(grades) {
         return;
     }
 
-   const passCount = grades.filter(
-    (item) => item.grade !== null && item.grade >= 1
-).length;
+    const passCount = grades.filter(
+        (item) => item.grade !== null && item.grade >= 1
+    ).length;
 
-const failCount = grades.filter(
-    (item) => item.grade !== null && item.grade < 1
-).length;
+    const failCount = grades.filter(
+        (item) => item.grade !== null && item.grade < 1
+    ).length;
 
-const ungradedCount = grades.filter(
-    (item) => item.grade === null
-).length;
+    const ungradedCount = grades.filter(
+        (item) => item.grade === null
+    ).length;
 
-const total = passCount + failCount;
+    const total = passCount + failCount;
 
-    const passPercentage =
-        ((passCount / total) * 100).toFixed(1);
+    if (total === 0) {
+        container.textContent = "No graded progress data available.";
+        return;
+    }
 
-    const failPercentage =
-        ((failCount / total) * 100).toFixed(1);
+    const passPercentage = ((passCount / total) * 100).toFixed(1);
+    const failPercentage = ((failCount / total) * 100).toFixed(1);
 
-    const width = 700;
-    const height = 320;
+    const radius = 90;
+    const circumference = 2 * Math.PI * radius;
 
-    const svgNamespace =
-        "http://www.w3.org/2000/svg";
+    const passLength = (passCount / total) * circumference;
+    const failLength = (failCount / total) * circumference;
 
-    const svg = document.createElementNS(
-        svgNamespace,
-        "svg"
-    );
+    container.innerHTML = `
+        <svg viewBox="0 0 420 420" width="100%" height="420">
+            <text x="210" y="40" text-anchor="middle" font-size="20" fill="white">
+                PASS vs FAIL
+            </text>
 
-    svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
-    svg.setAttribute("width", "100%");
-    svg.setAttribute("height", height);
+            <circle
+                cx="160"
+                cy="190"
+                r="${radius}"
+                fill="none"
+                stroke="#1f2a44"
+                stroke-width="36"
+            ></circle>
 
+            <circle
+                cx="160"
+                cy="190"
+                r="${radius}"
+                fill="none"
+                stroke="#2e7d32"
+                stroke-width="36"
+                stroke-dasharray="${passLength} ${circumference - passLength}"
+                stroke-dashoffset="0"
+                transform="rotate(-90 160 190)"
+            ></circle>
 
-    // Title
-    const title = document.createElementNS(
-        svgNamespace,
-        "text"
-    );
+            <circle
+                cx="160"
+                cy="190"
+                r="${radius}"
+                fill="none"
+                stroke="#c62828"
+                stroke-width="36"
+                stroke-dasharray="${failLength} ${circumference - failLength}"
+                stroke-dashoffset="${-passLength}"
+                transform="rotate(-90 160 190)"
+            ></circle>
 
-    title.setAttribute("x", width / 2);
-    title.setAttribute("y", 35);
-    title.setAttribute("text-anchor", "middle");
-    title.setAttribute("font-size", "20");
+            <text x="160" y="183" text-anchor="middle" font-size="20" fill="white">
+                ${total}
+            </text>
 
-    title.textContent = "PASS vs FAIL";
+            <text x="160" y="208" text-anchor="middle" font-size="14" fill="#cbd5e1">
+                Graded
+            </text>
 
-    svg.appendChild(title);
+            <rect x="285" y="140" width="18" height="18" rx="3" fill="#2e7d32"></rect>
+            <text x="312" y="154" font-size="15" fill="white">
+                PASS: ${passCount} (${passPercentage}%)
+            </text>
 
+            <rect x="285" y="180" width="18" height="18" rx="3" fill="#c62828"></rect>
+            <text x="312" y="194" font-size="15" fill="white">
+                FAIL: ${failCount} (${failPercentage}%)
+            </text>
 
-    const maxCount = Math.max(passCount, failCount);
-
-    const barStartX = 130;
-    const maxBarWidth = 450;
-    const barHeight = 55;
-
-
-    // PASS label
-    const passLabel = document.createElementNS(
-        svgNamespace,
-        "text"
-    );
-
-    passLabel.setAttribute("x", 30);
-    passLabel.setAttribute("y", 115);
-    passLabel.setAttribute("font-size", "16");
-
-    passLabel.textContent = "PASS";
-
-    svg.appendChild(passLabel);
-
-
-    // PASS bar
-    const passBar = document.createElementNS(
-        svgNamespace,
-        "rect"
-    );
-
-    const passWidth =
-        (passCount / maxCount) * maxBarWidth;
-
-    passBar.setAttribute("x", barStartX);
-    passBar.setAttribute("y", 75);
-    passBar.setAttribute("width", passWidth);
-    passBar.setAttribute("height", barHeight);
-    passBar.setAttribute("fill", "#2e7d32");
-
-    svg.appendChild(passBar);
-
-
-    // PASS value
-    const passValue = document.createElementNS(
-        svgNamespace,
-        "text"
-    );
-
-    passValue.setAttribute("x", barStartX + 10);
-    passValue.setAttribute("y", 108);
-    passValue.setAttribute("fill", "white");
-    passValue.setAttribute("font-size", "16");
-
-    passValue.textContent =
-        `${passCount} (${passPercentage}%)`;
-
-    svg.appendChild(passValue);
-
-
-    // FAIL label
-    const failLabel = document.createElementNS(
-        svgNamespace,
-        "text"
-    );
-
-    failLabel.setAttribute("x", 30);
-    failLabel.setAttribute("y", 215);
-    failLabel.setAttribute("font-size", "16");
-
-    failLabel.textContent = "FAIL";
-
-    svg.appendChild(failLabel);
-
-
-    // FAIL bar
-    const failBar = document.createElementNS(
-        svgNamespace,
-        "rect"
-    );
-
-    const failWidth =
-        (failCount / maxCount) * maxBarWidth;
-
-    failBar.setAttribute("x", barStartX);
-    failBar.setAttribute("y", 175);
-    failBar.setAttribute("width", failWidth);
-    failBar.setAttribute("height", barHeight);
-    failBar.setAttribute("fill", "#c62828");
-
-    svg.appendChild(failBar);
-
-
-    // FAIL value
-    const failValue = document.createElementNS(
-        svgNamespace,
-        "text"
-    );
-
-    failValue.setAttribute("x", barStartX + 10);
-    failValue.setAttribute("y", 208);
-    failValue.setAttribute("fill", "white");
-    failValue.setAttribute("font-size", "16");
-
-    failValue.textContent =
-        `${failCount} (${failPercentage}%)`;
-
-    svg.appendChild(failValue);
-
-
-    // Total label
-    const totalLabel = document.createElementNS(
-        svgNamespace,
-        "text"
-    );
-
-    totalLabel.setAttribute("x", width / 2);
-    totalLabel.setAttribute("y", 285);
-    totalLabel.setAttribute("text-anchor", "middle");
-    totalLabel.setAttribute("font-size", "14");
-
-    totalLabel.textContent =
-    `Graded records: ${total} | Ungraded: ${ungradedCount}`;
-
-    svg.appendChild(totalLabel);
-
-    container.appendChild(svg);
+            <text x="210" y="330" text-anchor="middle" font-size="14" fill="#cbd5e1">
+                Ungraded records: ${ungradedCount}
+            </text>
+        </svg>
+    `;
 }
 
 function renderTopXpSourcesChart(transactions) {
