@@ -97,10 +97,11 @@ async function displayXp() {
             0
         );
 
-        xpInfo.textContent = `Total XP: ${totalXp}`;
+        const totalKb = totalXp / 1000;
 
+        xpInfo.textContent = `Total XP: ${totalKb.toFixed(2)} kB`;
     } catch (error) {
-        xpInfo.textContent = "Could not load XP.";
+        xpInfo.textContent = error.message;
     }
 }
 

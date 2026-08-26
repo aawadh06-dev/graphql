@@ -13,38 +13,27 @@ function renderXpOverTimeChart(transactions) {
         (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
     );
 
-    // Build cumulative XP values
-    let totalXp = 0;
+    // Build cumulative XP data
+    let runningTotal = 0;
 
-    const points = sortedTransactions.map((transaction) => {
-        totalXp += transaction.amount;
+    const cumulativeData = sortedTransactions.map((transaction) => {
+        runningTotal += Number(transaction.amount) || 0;
 
         return {
             date: new Date(transaction.createdAt),
-            xp: totalXp
+            xp: runningTotal
         };
     });
 
     const width = 800;
     const height = 400;
 
-    const padding = {
-        top: 40,
-        right: 30,
-        bottom: 60,
-        left: 80
-    };
+    const paddingLeft = 90;
+    const paddingRight = 30;
+    const paddingTop = 60;
+    const paddingBottom = 70;
 
-    const chartWidth =
-        width - padding.left - padding.right;
-
-    const chartHeight =
-        height - padding.top - padding.bottom;
-
-    const maxXp = Math.max(...points.map((point) => point.xp));
-
-    const svgNamespace =
-        "http://www.w3.org/2000/svg";
+    const svgNamespace = "http://www.w3.org/2000/svg";
 
     const svg = document.createElementNS(
         svgNamespace,
@@ -55,15 +44,14 @@ function renderXpOverTimeChart(transactions) {
     svg.setAttribute("width", "100%");
     svg.setAttribute("height", height);
 
-
-    // Chart title
+    // Title
     const title = document.createElementNS(
         svgNamespace,
         "text"
     );
 
     title.setAttribute("x", width / 2);
-    title.setAttribute("y", 25);
+    title.setAttribute("y", 35);
     title.setAttribute("text-anchor", "middle");
     title.setAttribute("font-size", "20");
 
@@ -71,6 +59,13 @@ function renderXpOverTimeChart(transactions) {
 
     svg.appendChild(title);
 
+    const maxXp = cumulativeData[cumulativeData.length - 1].xp;
+
+    const graphWidth =
+        width - paddingLeft - paddingRight;
+
+    const graphHeight =
+        height - paddingTop - paddingBottom;
 
     // X axis
     const xAxis = document.createElementNS(
@@ -78,14 +73,12 @@ function renderXpOverTimeChart(transactions) {
         "line"
     );
 
-    xAxis.setAttribute("x1", padding.left);
-    xAxis.setAttribute("y1", height - padding.bottom);
-    xAxis.setAttribute("x2", width - padding.right);
-    xAxis.setAttribute("y2", height - padding.bottom);
-    xAxis.setAttribute("stroke", "currentColor");
+    xAxis.setAttribute("x1", paddingLeft);
+    xAxis.setAttribute("y1", height - paddingBottom);
+    xAxis.setAttribute("x2", width - paddingRight);
+    xAxis.setAttribute("y2", height - paddingBottom);
 
     svg.appendChild(xAxis);
-
 
     // Y axis
     const yAxis = document.createElementNS(
@@ -93,124 +86,103 @@ function renderXpOverTimeChart(transactions) {
         "line"
     );
 
-    yAxis.setAttribute("x1", padding.left);
-    yAxis.setAttribute("y1", padding.top);
-    yAxis.setAttribute("x2", padding.left);
-    yAxis.setAttribute("y2", height - padding.bottom);
-    yAxis.setAttribute("stroke", "currentColor");
+    yAxis.setAttribute("x1", paddingLeft);
+    yAxis.setAttribute("y1", paddingTop);
+    yAxis.setAttribute("x2", paddingLeft);
+    yAxis.setAttribute("y2", height - paddingBottom);
 
     svg.appendChild(yAxis);
 
-
-    // Convert XP data into SVG coordinates
-    const svgPoints = points.map((point, index) => {
+    const points = cumulativeData.map((item, index) => {
         const x =
-            padding.left +
-            (index / Math.max(points.length - 1, 1)) *
-                chartWidth;
+            paddingLeft +
+            (index / Math.max(cumulativeData.length - 1, 1)) *
+                graphWidth;
 
         const y =
-            padding.top +
-            chartHeight -
-            (point.xp / maxXp) * chartHeight;
+            height -
+            paddingBottom -
+            (item.xp / maxXp) * graphHeight;
 
-        return {
-            x,
-            y,
-            xp: point.xp,
-            date: point.date
-        };
+        return `${x},${y}`;
     });
 
-
-    // Draw XP line
+    // XP line
     const polyline = document.createElementNS(
         svgNamespace,
         "polyline"
     );
 
-    polyline.setAttribute(
-        "points",
-        svgPoints
-            .map((point) => `${point.x},${point.y}`)
-            .join(" ")
-    );
-
+    polyline.setAttribute("points", points.join(" "));
     polyline.setAttribute("fill", "none");
-    polyline.setAttribute("stroke", "currentColor");
+    polyline.setAttribute("stroke", "#60a5fa");
     polyline.setAttribute("stroke-width", "2");
 
     svg.appendChild(polyline);
 
-
-    // Start date label
-    const startDate = document.createElementNS(
+    // Maximum XP label converted to kB
+    const maxLabel = document.createElementNS(
         svgNamespace,
         "text"
     );
 
-    startDate.setAttribute("x", padding.left);
-    startDate.setAttribute("y", height - 25);
-    startDate.setAttribute("font-size", "12");
+    maxLabel.setAttribute("x", paddingLeft - 10);
+    maxLabel.setAttribute("y", paddingTop + 5);
+    maxLabel.setAttribute("text-anchor", "end");
+    maxLabel.setAttribute("font-size", "12");
 
-    startDate.textContent =
-        points[0].date.toLocaleDateString();
+    maxLabel.textContent =
+        `${(maxXp / 1000).toFixed(2)} kB`;
 
-    svg.appendChild(startDate);
+    svg.appendChild(maxLabel);
 
-
-    // End date label
-    const endDate = document.createElementNS(
-        svgNamespace,
-        "text"
-    );
-
-    endDate.setAttribute("x", width - padding.right);
-    endDate.setAttribute("y", height - 25);
-    endDate.setAttribute("text-anchor", "end");
-    endDate.setAttribute("font-size", "12");
-
-    endDate.textContent =
-        points[points.length - 1].date.toLocaleDateString();
-
-    svg.appendChild(endDate);
-
-
-    // Maximum XP label
-    const maxXpLabel = document.createElementNS(
-        svgNamespace,
-        "text"
-    );
-
-    maxXpLabel.setAttribute("x", padding.left - 10);
-    maxXpLabel.setAttribute("y", padding.top + 5);
-    maxXpLabel.setAttribute("text-anchor", "end");
-    maxXpLabel.setAttribute("font-size", "12");
-
-    maxXpLabel.textContent =
-        `${maxXp.toLocaleString()} XP`;
-
-    svg.appendChild(maxXpLabel);
-
-
-    // Zero XP label
+    // Zero label
     const zeroLabel = document.createElementNS(
         svgNamespace,
         "text"
     );
 
-    zeroLabel.setAttribute("x", padding.left - 10);
-    zeroLabel.setAttribute(
-        "y",
-        height - padding.bottom + 5
-    );
-
+    zeroLabel.setAttribute("x", paddingLeft - 10);
+    zeroLabel.setAttribute("y", height - paddingBottom + 5);
     zeroLabel.setAttribute("text-anchor", "end");
     zeroLabel.setAttribute("font-size", "12");
 
-    zeroLabel.textContent = "0 XP";
+    zeroLabel.textContent = "0 kB";
 
     svg.appendChild(zeroLabel);
+
+    // Start date
+    const startDate = document.createElementNS(
+        svgNamespace,
+        "text"
+    );
+
+    startDate.setAttribute("x", paddingLeft);
+    startDate.setAttribute("y", height - 30);
+    startDate.setAttribute("font-size", "12");
+
+    startDate.textContent =
+        cumulativeData[0].date.toLocaleDateString();
+
+    svg.appendChild(startDate);
+
+    // End date
+    const endDate = document.createElementNS(
+        svgNamespace,
+        "text"
+    );
+
+    endDate.setAttribute("x", width - paddingRight);
+    endDate.setAttribute("y", height - 30);
+    endDate.setAttribute("text-anchor", "end");
+    endDate.setAttribute("font-size", "12");
+
+    endDate.textContent =
+        cumulativeData[
+            cumulativeData.length - 1
+        ].date.toLocaleDateString();
+
+    svg.appendChild(endDate);
 
     container.appendChild(svg);
 }
@@ -354,8 +326,7 @@ function renderTopXpSourcesChart(transactions) {
     const width = 800;
     const height = 420;
 
-    const svgNamespace =
-        "http://www.w3.org/2000/svg";
+    const svgNamespace = "http://www.w3.org/2000/svg";
 
     const svg = document.createElementNS(
         svgNamespace,
@@ -427,7 +398,7 @@ function renderTopXpSourcesChart(transactions) {
 
         svg.appendChild(bar);
 
-        // XP value
+        // kB value
         const value = document.createElementNS(
             svgNamespace,
             "text"
@@ -439,7 +410,7 @@ function renderTopXpSourcesChart(transactions) {
         value.setAttribute("font-size", "14");
 
         value.textContent =
-            `${source.xp.toLocaleString()} XP`;
+            `${(source.xp / 1000).toFixed(2)} kB`;
 
         svg.appendChild(value);
     });
