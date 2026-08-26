@@ -18,6 +18,7 @@ renderTopXpSourcesChart(xpTransactions);
 const progressGrades = await getProgressGrades();
 renderPassFailChart(progressGrades);
 
+
     } else {
         loginView.hidden = false;
         profileView.hidden = true;
@@ -114,17 +115,29 @@ async function displayGrades() {
         progressInfo.innerHTML = "";
 
         grades.forEach((item) => {
-            const gradeItem = document.createElement("p");
+            const row = document.createElement("div");
 
-            gradeItem.textContent =
-                `Grade: ${item.grade} | Path: ${item.path}`;
+            let result;
 
-            progressInfo.appendChild(gradeItem);
+            if (item.grade === null) {
+                result = "UNGRADED";
+                row.classList.add("grade-ungraded");
+            } else if (item.grade >= 1) {
+                result = "PASS";
+                row.classList.add("grade-pass");
+            } else {
+                result = "FAIL";
+                row.classList.add("grade-fail");
+            }
+
+           const projectName = item.path.split("/").filter(Boolean).pop();
+
+row.textContent = `${result} | Project: ${projectName}`;
+
+            progressInfo.appendChild(row);
         });
-
     } catch (error) {
-        progressInfo.textContent =
-            "Could not load grade information.";
+        progressInfo.textContent = error.message;
     }
 }
 

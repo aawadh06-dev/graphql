@@ -701,3 +701,18 @@ input:focus-visible {
         transition-duration: 0.01ms !important;
     }
 }
+
+#progress-info .grade-pass {
+    color: #22c55e;
+    font-weight: 700;
+}
+
+#progress-info .grade-fail {
+    color: #ef4444;
+    font-weight: 700;
+}
+
+#progress-info .grade-ungraded {
+    color: #f59e0b;
+    font-weight: 700;
+}
