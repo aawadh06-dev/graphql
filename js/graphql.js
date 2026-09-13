@@ -101,11 +101,16 @@ async function getXpTransactions() {
     const query = `
         {
             transaction(
-                where: { type: { _eq: "xp" } }
+                where: {
+                    type: { _eq: "xp" }
+                    eventId: { _eq: 1195 }
+                }
+                order_by: { createdAt: asc }
             ) {
                 amount
                 path
                 createdAt
+                eventId
             }
         }
     `;
@@ -114,12 +119,15 @@ async function getXpTransactions() {
 
     return data.transaction;
 }
-
 // Get grade/progress data
 async function getGrades() {
     const query = `
         {
-            progress(limit: 10) {
+            progress(
+                where: {
+                    path: { _like: "/bahrain/bh-module/%" }
+                }
+            ) {
                 grade
                 path
             }
@@ -134,13 +142,34 @@ async function getGrades() {
 async function getProgressGrades() {
     const query = `
         {
-            progress {
+            progress(
+                where: {
+                    path: { _like: "/bahrain/bh-module/%" }
+                }
+            ) {
                 grade
+                path
             }
         }
     `;
 
     const data = await graphqlRequest(query);
 
-    return data.progress;
+    const projectGrades = data.progress.filter((item) => {
+        if (!item.path || item.grade === null) {
+            return false;
+        }
+
+        const parts = item.path
+            .split("/")
+            .filter(Boolean);
+
+        return (
+            parts.length === 3 &&
+            item.path !== "/bahrain/bh-module/piscine-js" &&
+            item.path !== "/bahrain/bh-module/checkpoint"
+        );
+    });
+
+    return projectGrades;
 }

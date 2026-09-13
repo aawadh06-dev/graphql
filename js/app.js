@@ -3,89 +3,99 @@ async function updateView() {
     const profileView = document.getElementById("profile-view");
 
     if (isAuthenticated()) {
-        loginView.hidden = true;
-        profileView.hidden = false;
+        loginView.style.display = "none";
+        profileView.style.display = "block";
 
-      await displayFilteredUser();
-await displayNestedSummary();
-await displayXp();
-await displayGrades();
+        await displayFilteredUser();
+        await displayNestedSummary();
+        await displayXp();
+        await displayGrades();
 
-const xpTransactions = await getXpTransactions();
-renderXpOverTimeChart(xpTransactions);
-renderTopXpSourcesChart(xpTransactions);
+        // XP graphs
+        const xpTransactions = await getXpTransactions();
 
-const progressGrades = await getProgressGrades();
-renderPassFailChart(progressGrades);
+        renderXpOverTimeChart(xpTransactions);
+        renderTopXpSourcesChart(xpTransactions);
 
+        // PASS / FAIL graph
+        const progressGrades = await getProgressGrades();
 
+        renderPassFailChart(progressGrades);
     } else {
-        loginView.hidden = false;
-        profileView.hidden = true;
+        loginView.style.display = "block";
+        profileView.style.display = "none";
     }
 }
 
 
-// Display basic user information
+// Display user information
 async function displayFilteredUser() {
     const userInfo = document.getElementById("user-info");
 
     try {
         const userId = getAuthenticatedUserId();
+
+        if (!userId) {
+            throw new Error("Could not find authenticated user ID.");
+        }
+
         const user = await getUserById(userId);
 
-        userInfo.innerHTML = "";
+        if (!user) {
+            throw new Error("User information not found.");
+        }
 
-        const fields = [
-            `User ID: ${user.id}`,
-            `Login: ${user.login}`,
-            `First Name: ${user.attrs.firstName}`,
-            `Last Name: ${user.attrs.lastName}`,
-            `Country: ${user.attrs.country}`
-        ];
+        const firstName = user.attrs?.firstName || "Not available";
+        const lastName = user.attrs?.lastName || "Not available";
+        const country = user.attrs?.country || "Not available";
 
-        fields.forEach((text) => {
-            const item = document.createElement("p");
-            item.textContent = text;
-            userInfo.appendChild(item);
-        });
-
+        userInfo.innerHTML = `
+            <div>User ID: ${user.id}</div>
+            <div>Login: ${user.login}</div>
+            <div>First Name: ${firstName}</div>
+            <div>Last Name: ${lastName}</div>
+            <div>Country: ${country}</div>
+            <div id="nested-summary">Loading nested query...</div>
+        `;
     } catch (error) {
-        userInfo.textContent = "Could not load user information.";
+        userInfo.textContent = error.message;
     }
 }
 
 
-// Display one visible nested-query result
+// Display result from nested GraphQL query
 async function displayNestedSummary() {
-    const userInfo = document.getElementById("user-info");
+    const nestedSummary =
+        document.getElementById("nested-summary");
+
+    if (!nestedSummary) {
+        return;
+    }
 
     try {
         const results = await getNestedResults();
 
-        const resultWithUser = results.find(
+        const validResult = results.find(
             (result) => result.user !== null
         );
 
-        if (!resultWithUser) {
+        if (!validResult) {
+            nestedSummary.textContent =
+                "Nested Result: No user result available.";
             return;
         }
 
-        const item = document.createElement("p");
-
-        item.textContent =
-            `Nested Result: ${resultWithUser.id} → ` +
-            `${resultWithUser.user.login} (${resultWithUser.user.id})`;
-
-        userInfo.appendChild(item);
-
+        nestedSummary.textContent =
+            `Nested Result: ${validResult.id} → ` +
+            `${validResult.user.login} (${validResult.user.id})`;
     } catch (error) {
-        console.error("Could not display nested query data:", error);
+        nestedSummary.textContent =
+            `Nested query error: ${error.message}`;
     }
 }
 
 
-// Display total XP
+// Display total XP in kB
 async function displayXp() {
     const xpInfo = document.getElementById("xp-info");
 
@@ -93,37 +103,59 @@ async function displayXp() {
         const transactions = await getXpTransactions();
 
         const totalXp = transactions.reduce(
-            (total, transaction) => total + transaction.amount,
+            (total, transaction) =>
+                total + (Number(transaction.amount) || 0),
             0
         );
 
         const totalKb = totalXp / 1000;
 
-        xpInfo.textContent = `Total XP: ${totalKb.toFixed(2)} kB`;
+        xpInfo.textContent =
+            `Total XP: ${totalKb.toFixed(2)} kB`;
     } catch (error) {
         xpInfo.textContent = error.message;
     }
 }
 
 
-// Display grade information
+// Display only completed module projects
 async function displayGrades() {
-    const progressInfo = document.getElementById("progress-info");
+    const progressInfo =
+        document.getElementById("progress-info");
 
     try {
         const grades = await getGrades();
 
         progressInfo.innerHTML = "";
 
-        grades.forEach((item) => {
+        const projectGrades = grades.filter((item) => {
+            if (!item.path) {
+                return false;
+            }
+
+            const parts =
+                item.path.split("/").filter(Boolean);
+
+          return (
+    parts.length === 3 &&
+    item.grade !== null &&
+    item.path !== "/bahrain/bh-module/piscine-js" &&
+    item.path !== "/bahrain/bh-module/checkpoint"
+);
+        });
+
+        if (projectGrades.length === 0) {
+            progressInfo.textContent =
+                "No completed projects found.";
+            return;
+        }
+
+        projectGrades.forEach((item) => {
             const row = document.createElement("div");
 
             let result;
 
-            if (item.grade === null) {
-                result = "UNGRADED";
-                row.classList.add("grade-ungraded");
-            } else if (item.grade >= 1) {
+            if (item.grade >= 1) {
                 result = "PASS";
                 row.classList.add("grade-pass");
             } else {
@@ -131,9 +163,14 @@ async function displayGrades() {
                 row.classList.add("grade-fail");
             }
 
-           const projectName = item.path.split("/").filter(Boolean).pop();
+            const projectName =
+                item.path
+                    .split("/")
+                    .filter(Boolean)
+                    .pop();
 
-row.textContent = `${result} | Project: ${projectName}`;
+            row.textContent =
+                `${result} | Project: ${projectName}`;
 
             progressInfo.appendChild(row);
         });
@@ -143,13 +180,17 @@ row.textContent = `${result} | Project: ${projectName}`;
 }
 
 
+// Run when page loads
 document.addEventListener("DOMContentLoaded", () => {
-    const logoutButton = document.getElementById("logout-button");
-
     updateView();
 
-    logoutButton.addEventListener("click", () => {
-        removeToken();
-        updateView();
-    });
+    const logoutButton =
+        document.getElementById("logout-button");
+
+    if (logoutButton) {
+        logoutButton.addEventListener("click", () => {
+            removeToken();
+            updateView();
+        });
+    }
 });
